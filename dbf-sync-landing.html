@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DBF Sync: copia automática de archivos .dbf en Windows</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f2f5f9; --surface:#ffffff; --ink:#0e1b2c; --muted:#4a5a70; --line:#d5dde8;
+  --accent:#1f5fd1; --accent-ink:#ffffff; --soft:#e4edfc; --ok:#0b6b4d; --warnbg:#fff4d6; --warnink:#7a4a00; --warnline:#f0c766;
+  --code-bg:#0e1b2c; --code-ink:#dbe6f6;
+  --sans:"IBM Plex Sans","Segoe UI",Tahoma,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1320; --surface:#121d2f; --ink:#e6edf7; --muted:#9db0c8; --line:#26354d;
+    --accent:#6c9cf5; --accent-ink:#0b1320; --soft:#17284a; --ok:#5fd4a5; --warnbg:#2b2210; --warnink:#f0cd86; --warnline:#5a4619;
+    --code-bg:#060c16; --code-ink:#dbe6f6; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1320; --surface:#121d2f; --ink:#e6edf7; --muted:#9db0c8; --line:#26354d;
+  --accent:#6c9cf5; --accent-ink:#0b1320; --soft:#17284a; --ok:#5fd4a5; --warnbg:#2b2210; --warnink:#f0cd86; --warnline:#5a4619;
+  --code-bg:#060c16; --code-ink:#dbe6f6; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--sans)}
+a{color:var(--accent)}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;gap:18px;align-items:center;overflow-x:auto;padding-top:10px;padding-bottom:10px;white-space:nowrap}
+nav b{margin-right:auto;font-weight:700}
+nav a{color:var(--muted);text-decoration:none;font-size:15px}
+nav a:hover{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+.hero{padding:56px 0 40px}
+h1{font-size:clamp(34px,6vw,56px);line-height:1.05;letter-spacing:-.02em;margin:0 0 16px;max-width:15em}
+.lead{font-size:19px;color:var(--muted);max-width:36em;margin:0 0 24px}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;padding:12px 20px;border-radius:8px;font-weight:600;text-decoration:none;border:2px solid var(--accent)}
+.btn.p{background:var(--accent);color:var(--accent-ink)}
+.btn.s{color:var(--accent)}
+
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:stretch;margin:40px 0 0}
+.node{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.node small{display:block;color:var(--muted);font-size:14px}
+.node code{font-size:16px;font-weight:500}
+.node.svc{background:var(--soft);border-color:var(--accent)}
+.arrow{align-self:center;color:var(--accent);font-size:26px}
+.facts{margin:14px 0 0;color:var(--muted);font-size:15px}
+
+section{padding:44px 0 8px}
+h2{font-size:28px;letter-spacing:-.01em;margin:0 0 8px}
+h2+p{color:var(--muted);margin:0 0 20px;max-width:40em}
+h3{font-size:18px;margin:0 0 6px}
+code{font-family:var(--mono);font-size:.9em;background:var(--soft);border-radius:4px;padding:1px 6px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:14px 16px;overflow-x:auto;font:14px/1.55 var(--mono);margin:12px 0}
+pre code{background:none;padding:0;font-size:inherit}
+.note{background:var(--warnbg);color:var(--warnink);border:1px solid var(--warnline);border-radius:10px;padding:12px 16px;margin:16px 0}
+
+.seg{display:inline-flex;border:2px solid var(--accent);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.seg button{font:600 16px var(--sans);padding:10px 20px;border:0;background:transparent;color:var(--accent);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.pick{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 18px}
+.pick dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:0 24px}
+.pick dt,.pick dd{padding:12px 0;margin:0;border-bottom:1px solid var(--line)}
+.pick dt:nth-last-of-type(1),.pick dd:last-of-type{border-bottom:0}
+.pick dt{color:var(--muted)}
+
+ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+ol.steps>li{counter-increment:s;position:relative;padding:0 0 22px 52px}
+ol.steps>li::before{content:counter(s);position:absolute;left:0;top:0;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
+ol.steps>li::after{content:"";position:absolute;left:17px;top:40px;bottom:4px;width:2px;background:var(--line)}
+ol.steps>li:last-child::after{display:none}
+ol.steps ul{margin:6px 0 0;padding-left:20px;color:var(--muted)}
+.done{color:var(--ok);font-weight:600}
+
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:11px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--soft);font-weight:600;font-size:15px}
+tr:last-child td{border-bottom:0}
+.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:16px}
+.levels div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px}
+.levels .rec{border-color:var(--ok);border-width:2px}
+
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.three>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.three p{margin:0;color:var(--muted);font-size:15px}
+
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:10px 0;padding:0 16px}
+summary{cursor:pointer;font-weight:600;padding:14px 0}
+details p{margin:0 0 14px;color:var(--muted)}
+footer{margin-top:56px;border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:15px}
+
+@media (max-width:700px){
+  .flow{grid-template-columns:1fr}
+  .arrow{transform:rotate(90deg);justify-self:center}
+  .hero{padding-top:36px}
+  .pick dl{grid-template-columns:1fr}
+  .pick dt{border-bottom:0;padding-bottom:0}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <b>DBF Sync</b>
+  <a href="#paquete">Paquete</a><a href="#instalar">Instalación</a><a href="#config">Configuración</a><a href="#verificar">Verificar</a><a href="#acciones">Acciones</a><a href="#ayuda">Ayuda</a>
+</div></nav>
+
+<main class="wrap">
+<header class="hero">
+  <h1>Sus archivos .dbf, copiados solos en segundo plano.</h1>
+  <p class="lead">DBF Sync es un servicio de Windows que copia los archivos <code>.dbf</code> de una carpeta a otra cada cierto tiempo. No necesita ventanas abiertas, funciona también en Windows de 32 bits y arranca junto con el equipo.</p>
+  <div class="btns">
+    <a class="btn p" href="#instalar">Instalar en 5 pasos</a>
+    <a class="btn s" href="#paquete">¿Qué carpeta copio?</a>
+  </div>
+
+  <div class="flow" aria-label="Flujo de copia">
+    <div class="node"><small>Carpeta origen</small><code>C:\sis</code></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="node svc"><small>Servicio de Windows</small><code>DBFGuardian</code></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="node"><small>Carpeta destino</small><code>C:\sis\web</code></div>
+  </div>
+  <p class="facts">Se inicia con Windows y se recupera ante fallos. No borra ni mueve los archivos originales.</p>
+</header>
+
+<section id="paquete">
+  <h2>1. Elija la carpeta según su Windows</h2>
+  <p>Copie la carpeta completa del paquete, nunca archivos sueltos: el configurador, el servicio y <code>config.json</code> deben quedar juntos.</p>
+  <div class="seg" role="group" aria-label="Tipo de Windows">
+    <button type="button" data-arch="x86" aria-pressed="true">Windows 32-bit</button>
+    <button type="button" data-arch="x64" aria-pressed="false">Windows 64-bit</button>
+  </div>
+  <div class="pick" aria-live="polite">
+    <dl>
+      <dt>Carpeta a copiar</dt><dd><code id="a-dir">deploy\x86\</code></dd>
+      <dt>Archivo a abrir</dt><dd><code id="a-mgr">dbf_sync_manager_x86.exe</code></dd>
+      <dt>Servicio incluido</dt><dd><code id="a-svc">dbf_sync_service_x86.exe</code></dd>
+    </dl>
+  </div>
+  <div class="note"><strong>Use una ruta fija y definitiva</strong>, por ejemplo <code>C:\DBFSync\</code>. No instale desde Descargas ni desde una carpeta temporal: Windows registra esa ruta y, si la mueve o la borra, el servicio deja de funcionar.</div>
+</section>
+
+<section id="instalar">
+  <h2>2. Primera instalación</h2>
+  <p>Son cinco pasos y el último es opcional.</p>
+  <ol class="steps">
+    <li><h3>Copie la carpeta</h3>Pegue <code>deploy\x86\</code> o <code>deploy\x64\</code> en la PC, por ejemplo en <code>C:\DBFSync\</code>.</li>
+    <li><h3>Abra el configurador como administrador</h3>
+      <ul><li>32-bit: <code>dbf_sync_manager_x86.exe</code></li><li>64-bit: <code>dbf_sync_manager_x64.exe</code></li></ul></li>
+    <li><h3>Revise los datos y pulse Guardar config</h3>Los valores recomendados están en la sección siguiente.</li>
+    <li><h3>Pulse Instalar / Iniciar</h3>
+      <ul><li>Windows pedirá permiso de administrador (UAC): acepte para continuar.</li><li>Se instala e inicia el servicio <code>DBFGuardian</code> con inicio automático.</li></ul></li>
+    <li><h3>Cree accesos directos (opcional)</h3>Desde el configurador puede crearlos en el Escritorio: abrir el configurador, iniciar el servicio, detenerlo, o correr una sincronización en consola para pruebas. <em>Quitar accesos</em> los elimina.</li>
+  </ol>
+  <p class="done">Al terminar, el servicio queda activo y se inicia solo con Windows.</p>
+</section>
+
+<section id="config">
+  <h2>3. Configuración recomendada</h2>
+  <p>Estos valores sirven para la mayoría de las instalaciones.</p>
+  <div class="scroll"><table>
+    <tr><th>Campo</th><th>Para qué sirve</th><th>Recomendado</th></tr>
+    <tr><td>Carpeta origen</td><td>Dónde están los <code>.dbf</code></td><td><code>C:\sis</code></td></tr>
+    <tr><td>Carpeta destino</td><td>Dónde se guardan las copias</td><td><code>C:\sis\web</code></td></tr>
+    <tr><td>Extensión</td><td>Tipo de archivo a copiar</td><td><code>.dbf</code></td></tr>
+    <tr><td>Intervalo (min)</td><td>Cada cuánto sincroniza</td><td><code>50</code> (evite 1 min salvo necesidad)</td></tr>
+    <tr><td>Reintentos / Espera</td><td>Reintentos ante errores</td><td><code>2</code> / <code>2.0</code> s</td></tr>
+    <tr><td>Estabilidad</td><td>Espera a que el archivo termine de escribirse</td><td><code>2</code> chequeos / <code>0.5</code> s</td></tr>
+    <tr><td>Carpeta de logs</td><td>Dónde se guarda el registro</td><td><code>C:\sis\logs</code></td></tr>
+    <tr><td>Nivel de log</td><td>Detalle del registro</td><td><code>PRODUCCION</code> o <code>WARNING</code></td></tr>
+    <tr><td>Notificar al completar</td><td>Aviso al copiar o actualizar</td><td>Desmarcado</td></tr>
+  </table></div>
+  <h3 style="margin-top:22px">Niveles de log</h3>
+  <div class="levels">
+    <div class="rec"><strong>PRODUCCION / WARNING</strong><br>Recomendado. Solo avisos y errores, con mínimo uso de disco y CPU.</div>
+    <div><strong>INFO</strong><br>Para comprobar que trabaja (pruebas).</div>
+    <div><strong>DEBUG / PRUEBA</strong><br>Diagnóstico de un problema. Úselo solo temporalmente.</div>
+    <div><strong>ERROR</strong><br>Solo errores. No se recomienda porque oculta avisos.</div>
+  </div>
+  <div class="note">Si cambia la configuración con el servicio en marcha, reinícielo con <strong>Detener</strong> e <strong>Iniciar</strong> para aplicar los cambios.</div>
+</section>
+
+<section id="verificar">
+  <h2>4. Compruebe que funciona</h2>
+  <p>Tres chequeos rápidos, en este orden.</p>
+  <div class="three">
+    <div><h3>Estado del servicio</h3><p>Abra CMD y ejecute el comando. Debe indicar <code>RUNNING</code>.</p><pre><code>sc query DBFGuardian</code></pre></div>
+    <div><h3>Carpeta destino</h3><p>Verifique que en <code>C:\sis\web</code> (o la destino configurada) estén los <code>.dbf</code> copiados.</p></div>
+    <div><h3>Registro</h3><p>Revise <code>C:\sis\logs\dbf_sync.log</code>. Con nivel <code>PRODUCCION</code> o <code>WARNING</code> es normal que haya pocas líneas o ninguna. Para una prueba visible, use <code>DEBUG</code> e intervalo <code>1</code> minuto, y después vuelva a los valores recomendados.</p></div>
+  </div>
+</section>
+
+<section id="acciones">
+  <h2>5. Acciones comunes</h2>
+  <div class="scroll"><table>
+    <tr><th>Necesito…</th><th>Qué hacer</th></tr>
+    <tr><td>Cambiar rutas o intervalo</td><td>Configurador → editar → <strong>Guardar config</strong> → reiniciar el servicio.</td></tr>
+    <tr><td>Iniciar o detener</td><td>Configurador (UAC) o, como administrador: <code>net start DBFGuardian</code> / <code>net stop DBFGuardian</code></td></tr>
+    <tr><td>Desinstalar</td><td>Configurador → <strong>Desinstalar</strong> (UAC), o <code>uninstall_service.bat</code> como administrador.</td></tr>
+    <tr><td>Actualizar el programa</td><td>Detenga o desinstale, reemplace los archivos en la <strong>misma carpeta fija</strong> por los del paquete nuevo y vuelva a <strong>Instalar / Iniciar</strong>.</td></tr>
+  </table></div>
+</section>
+
+<section id="ayuda">
+  <h2>6. Si algo no funciona</h2>
+  <p>Los problemas más habituales y su solución.</p>
+  <details><summary>“No se encontró el ejecutable del servicio”</summary><p>El configurador y el <code>dbf_sync_service_*.exe</code> no están en la misma carpeta. Copie de nuevo el paquete completo.</p></details>
+  <details><summary>Pide permiso de administrador</summary><p>Es normal: Windows lo exige para instalar, iniciar o detener el servicio.</p></details>
+  <details><summary>El servicio no inicia</summary><p>Revise <code>C:\sis\logs\dbf_sync.log</code>, verifique que las rutas existan y que la carpeta del programa no se haya movido. Luego use <strong>Instalar / Iniciar</strong>.</p></details>
+  <details><summary>No hay líneas nuevas en el log</summary><p>Con <code>PRODUCCION</code> o <code>WARNING</code> es normal si no hay novedades. Confirme el estado con <code>sc query DBFGuardian</code>.</p></details>
+  <details><summary>Moví la carpeta del programa</summary><p>El servicio apunta a la ruta anterior. Ejecute <strong>Instalar / Iniciar</strong> desde la nueva ubicación fija.</p></details>
+
+  <h3 style="margin-top:28px">Contenido del paquete</h3>
+<pre><code>deploy\x86\  (o deploy\x64\)
+  dbf_sync_manager_x86.exe / _x64.exe   configuración e instalación
+  dbf_sync_service_x86.exe / _x64.exe   servicio de sincronización
+  config.json                           configuración
+  install / uninstall / start / stop / status_service.bat   alternativa por comandos</code></pre>
+  <p style="font-size:15px">Para el uso normal alcanza con el configurador. Los archivos <code>.bat</code> son opcionales y requieren ejecutarse como administrador cuando corresponda.</p>
+</section>
+</main>
+
+<footer><div class="wrap">DBF Sync · Guía de instalación y uso para Windows 32 y 64 bits.</div></footer>
+
+<script>
+(function(){
+  var btns=document.querySelectorAll('.seg button');
+  function set(a){
+    btns.forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.arch===a));});
+    document.getElementById('a-dir').textContent='deploy\\'+a+'\\';
+    document.getElementById('a-mgr').textContent='dbf_sync_manager_'+a+'.exe';
+    document.getElementById('a-svc').textContent='dbf_sync_service_'+a+'.exe';
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){set(b.dataset.arch);});});
+})();
+</script>
+</body>
+</html>
