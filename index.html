@@ -119,8 +119,8 @@ footer{margin-top:56px;border-top:1px solid var(--line);padding:24px 0 40px;colo
 
 <main class="wrap">
 <header class="hero">
-  <h1>Sus archivos .dbf, copiados solos en segundo plano.</h1>
-  <p class="lead">DBF Sync es un servicio de Windows que copia los archivos <code>.dbf</code> de una carpeta a otra cada cierto tiempo. No necesita ventanas abiertas, funciona también en Windows de 32 bits y arranca junto con el equipo.</p>
+  <h1>Sus archivos .dbf y .dbt, copiados solos en segundo plano.</h1>
+  <p class="lead">DBF Sync es un servicio de Windows que copia los archivos <code>.dbf</code> (y sus <code>.dbt</code> de memos) de una carpeta a otra cada cierto tiempo. No necesita ventanas abiertas, funciona también en Windows de 32 bits y arranca junto con el equipo.</p>
   <div class="btns">
     <a class="btn p" href="#instalar">Instalar en 5 pasos</a>
     <a class="btn s" href="#paquete">¿Qué carpeta copio?</a>
@@ -207,11 +207,12 @@ footer{margin-top:56px;border-top:1px solid var(--line);padding:24px 0 40px;colo
     <div><h3>Sin cambios, no duplica</h3><p>En el modo normal, si el contenido es idéntico a la última copia, ese ciclo no crea otra.</p></div>
     <div><h3>Copiar siempre (opcional)</h3><p>Con la opción activa se crea una copia nueva en <em>cada</em> ciclo, aunque el archivo no haya cambiado. Con intervalo de 1 minuto llena el disco: úsela con un intervalo largo.</p></div>
   </div>
+  <div class="note" style="margin-top:16px"><strong>Archivos .dbt de memos:</strong> cuando un <code>.dbf</code> tiene campos memo, sus textos largos viven en un archivo aparte con el mismo nombre (<code>CLIENTES.DBF</code> → <code>CLIENTES.DBT</code>). El servicio lo copia <strong>automáticamente junto a su .dbf</strong>, con las mismas reglas (sin sobrescribir, versionado <code>(1)</code>, <code>(2)</code>…). No hay que seleccionarlo ni configurar nada.</div>
   <div class="scroll" style="margin-top:16px"><table>
     <tr><th>Paso</th><th>Qué hace el servicio</th></tr>
     <tr><td>1</td><td>Lee <code>config.json</code> y recorre cada ubicación (origen → destino).</td></tr>
-    <tr><td>2</td><td>Toma los <code>.dbf</code> elegidos (o todos los de la extensión) y verifica que el archivo haya terminado de escribirse.</td></tr>
-    <tr><td>3</td><td>Elige el primer nombre libre en destino: <code>nombre.dbf</code>, luego <code>nombre (1).dbf</code>, <code>nombre (2).dbf</code>…</td></tr>
+    <tr><td>2</td><td>Toma los <code>.dbf</code> elegidos (o todos los de la extensión), junto con sus <code>.dbt</code> de memos si existen, y verifica que hayan terminado de escribirse.</td></tr>
+    <tr><td>3</td><td>Elige el primer nombre libre en destino: <code>nombre.dbf</code>, luego <code>nombre (1).dbf</code>, <code>nombre (2).dbf</code>… (igual para los <code>.dbt</code>).</td></tr>
     <tr><td>4</td><td>Copia, registra el resultado y avisa si la notificación está activada.</td></tr>
   </table></div>
 </section>
@@ -221,7 +222,7 @@ footer{margin-top:56px;border-top:1px solid var(--line);padding:24px 0 40px;colo
   <p>Tres chequeos rápidos, en este orden.</p>
   <div class="three">
     <div><h3>Estado del servicio</h3><p>En el configurador debe verse <strong>● Servicio: activo</strong> en verde. Por CMD, <code>sc query DBFGuardian</code> debe indicar <code>ESTADO: 4 EN EJECUCIÓN</code> (o <code>RUNNING</code>).</p></div>
-    <div><h3>Carpeta destino</h3><p>Verifique que en <code>C:\sis\web</code> (o la destino configurada) estén los <code>.dbf</code> copiados.</p></div>
+    <div><h3>Carpeta destino</h3><p>Verifique que en <code>C:\sis\web</code> (o la destino configurada) estén los <code>.dbf</code> copiados, y los <code>.dbt</code> de memos si los había.</p></div>
     <div><h3>Registro</h3><p>Revise <code>C:\sis\logs\dbf_sync.log</code>. Con nivel <code>PRODUCCION</code> o <code>WARNING</code> es normal que haya pocas líneas o ninguna. Para una prueba visible, use <code>DEBUG</code> e intervalo <code>1</code> minuto, y después vuelva a los valores recomendados.</p></div>
   </div>
 </section>
