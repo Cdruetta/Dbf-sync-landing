@@ -133,7 +133,7 @@ footer{margin-top:56px;border-top:1px solid var(--line);padding:24px 0 40px;colo
     <div class="arrow" aria-hidden="true">→</div>
     <div class="node"><small>Carpeta destino</small><code>C:\sis\web</code></div>
   </div>
-  <p class="facts">Se inicia con Windows y se recupera ante fallos. No borra ni mueve los originales y nunca sobrescribe: si el nombre ya existe, guarda una copia con <code>(1)</code>, <code>(2)</code>…</p>
+  <p class="facts">Se inicia con Windows y se recupera ante fallos. No borra ni mueve los originales: el destino siempre queda con la versión actual de cada archivo (reemplaza, sin copias <code>(1)</code>, <code>(2)</code>…).</p>
 </header>
 
 <section id="paquete">
@@ -185,8 +185,7 @@ footer{margin-top:56px;border-top:1px solid var(--line);padding:24px 0 40px;colo
     <tr><td>Reintentos</td><td>Intentos ante errores de lectura o escritura</td><td><code>2</code></td></tr>
     <tr><td>Carpeta de logs</td><td>Dónde se guarda el registro</td><td><code>C:\sis\logs</code></td></tr>
     <tr><td>Nivel de log</td><td>Detalle del registro</td><td><code>PRODUCCION</code> o <code>WARNING</code></td></tr>
-    <tr><td>Notificar al finalizar</td><td>Aviso cuando copia, actualiza o hay errores</td><td>Desmarcado</td></tr>
-    <tr><td>Copiar siempre en cada ciclo</td><td>Copia aunque el archivo no haya cambiado, creando <code>nombre (1)</code>, <code>(2)</code>…</td><td>Desmarcado (actívelo solo si necesita una copia por ciclo)</td></tr>
+    <tr><td>Notificar al finalizar</td><td>Aviso cuando copia archivos o hay errores</td><td>Desmarcado</td></tr>
   </table></div>
   <p style="font-size:15px;color:var(--muted)">Los ajustes avanzados (<code>retry_delay_seconds</code>, <code>stability_checks</code>, <code>stability_interval_seconds</code>) no se muestran en la ventana: se conservan en <code>config.json</code> tal como estén. Los valores de fábrica son adecuados.</p>
   <h3 style="margin-top:22px">Niveles de log</h3>
@@ -203,16 +202,16 @@ footer{margin-top:56px;border-top:1px solid var(--line);padding:24px 0 40px;colo
   <h2>4. Cómo se copian los archivos</h2>
   <p>Siempre se copia; nunca se mueve ni se borra el original.</p>
   <div class="three">
-    <div><h3>Nunca sobrescribe</h3><p>Si el nombre ya existe en destino, la copia se guarda como <code>CLIENTES (1).DBF</code>, <code>CLIENTES (2).DBF</code>… El archivo que ya estaba queda intacto.</p></div>
-    <div><h3>Sin cambios, no duplica</h3><p>En el modo normal, si el contenido es idéntico a la última copia, ese ciclo no crea otra.</p></div>
-    <div><h3>Copiar siempre (opcional)</h3><p>Con la opción activa se crea una copia nueva en <em>cada</em> ciclo, aunque el archivo no haya cambiado. Con intervalo de 1 minuto llena el disco: úsela con un intervalo largo.</p></div>
+    <div><h3>Reemplaza siempre</h3><p>Cada ciclo copia cada archivo con su <strong>nombre original</strong> y reemplaza la versión anterior del destino con la actual del origen, aunque el contenido no haya cambiado.</p></div>
+    <div><h3>Sin copias (1), (2)</h3><p>Nunca se crean <code>CLIENTES (1).DBF</code>, <code>CLIENTES (2).DBF</code>… El destino siempre tiene un solo archivo por nombre.</p></div>
+    <div><h3>Destino protegido</h3><p>Si alguien modifica o borra un archivo del destino, el ciclo siguiente lo restaura con la versión del origen.</p></div>
   </div>
-  <div class="note" style="margin-top:16px"><strong>Archivos .dbt de memos:</strong> cuando un <code>.dbf</code> tiene campos memo, sus textos largos viven en un archivo aparte con el mismo nombre (<code>CLIENTES.DBF</code> → <code>CLIENTES.DBT</code>). El servicio lo copia <strong>automáticamente junto a su .dbf</strong>, con las mismas reglas (sin sobrescribir, versionado <code>(1)</code>, <code>(2)</code>…). No hay que seleccionarlo ni configurar nada.</div>
+  <div class="note" style="margin-top:16px"><strong>Archivos .dbt de memos:</strong> cuando un <code>.dbf</code> tiene campos memo, sus textos largos viven en un archivo aparte con el mismo nombre (<code>CLIENTES.DBF</code> → <code>CLIENTES.DBT</code>). El servicio lo copia <strong>automáticamente junto a su .dbf</strong>, con las mismas reglas (reemplazando la versión anterior). No hay que seleccionarlo ni configurar nada.</div>
   <div class="scroll" style="margin-top:16px"><table>
     <tr><th>Paso</th><th>Qué hace el servicio</th></tr>
     <tr><td>1</td><td>Lee <code>config.json</code> y recorre cada ubicación (origen → destino).</td></tr>
     <tr><td>2</td><td>Toma los <code>.dbf</code> elegidos (o todos los de la extensión), junto con sus <code>.dbt</code> de memos si existen, y verifica que hayan terminado de escribirse.</td></tr>
-    <tr><td>3</td><td>Elige el primer nombre libre en destino: <code>nombre.dbf</code>, luego <code>nombre (1).dbf</code>, <code>nombre (2).dbf</code>… (igual para los <code>.dbt</code>).</td></tr>
+    <tr><td>3</td><td>Copia cada archivo a su nombre original en destino, reemplazando la versión anterior de forma segura (igual para los <code>.dbt</code>).</td></tr>
     <tr><td>4</td><td>Copia, registra el resultado y avisa si la notificación está activada.</td></tr>
   </table></div>
 </section>
@@ -245,7 +244,7 @@ footer{margin-top:56px;border-top:1px solid var(--line);padding:24px 0 40px;colo
   <details><summary>Pide permiso de administrador</summary><p>Es normal: Windows lo exige para instalar, iniciar o detener el servicio.</p></details>
   <details><summary>El servicio no inicia</summary><p>Revise <code>C:\sis\logs\dbf_sync.log</code>, verifique que las rutas existan y que la carpeta del programa no se haya movido. Luego use <strong>Instalar / Iniciar</strong>.</p></details>
   <details><summary>No hay líneas nuevas en el log</summary><p>Con <code>PRODUCCION</code> o <code>WARNING</code> es normal si no hay novedades. Confirme el estado con <code>sc query DBFGuardian</code>.</p></details>
-  <details><summary>La carpeta destino se llenó de archivos “(1)”, “(2)”…</summary><p>Es el comportamiento normal: nunca se sobrescribe. Si está activa la opción <strong>Copiar siempre en cada ciclo</strong>, se crea una copia por ciclo; desmárquela y suba el intervalo, y borre a mano las copias que no necesite.</p></details>
+  <details><summary>La carpeta destino tiene archivos “(1)”, “(2)”…</summary><p>Son restos de una versión anterior del programa o de copias hechas a mano. La versión actual nunca crea archivos «(1)», «(2)»: siempre reemplaza con el nombre original. Puede borrar a mano esas copias viejas.</p></details>
   <details><summary>Moví la carpeta del programa</summary><p>El servicio apunta a la ruta anterior. Ejecute <strong>Instalar / Iniciar</strong> desde la nueva ubicación fija.</p></details>
 
   <h3 style="margin-top:28px">Contenido del paquete</h3>
